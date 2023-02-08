@@ -1,0 +1,4 @@
+camera_index: "/dev/video0"
+height: 448 
+width: 800
+frequency: 30

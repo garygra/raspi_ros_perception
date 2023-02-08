@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="perception" type="aruco_detection" name="aruco_detection" output="screen">
+    <rosparam command="load" file="$(find perception)/params/aruco_detection.yaml" />
+    </node>
+</launch>
