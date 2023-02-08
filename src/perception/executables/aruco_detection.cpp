@@ -7,7 +7,6 @@
 #include <thread>
 #include <unordered_map>
 
-#include <opencv2/calib3d.hpp>
 #include <opencv2/core/hal/interface.h>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
