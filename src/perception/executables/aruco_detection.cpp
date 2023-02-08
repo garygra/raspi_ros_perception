@@ -7,7 +7,6 @@
 #include <thread>
 #include <unordered_map>
 
-#include <opencv2/aruco.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/core/hal/interface.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -49,7 +48,7 @@ int main(int argc, char** argv)
   auto fourcc = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
 
   bool display_video{ false };
-  
+
   int height{ 0 };
   int width{ 0 };
   int frequency{ 0 };
@@ -60,7 +59,7 @@ int main(int argc, char** argv)
   perception::get_param_and_check(nh, GET_VARIABLE_NAME(height), height);
   perception::get_param_and_check(nh, GET_VARIABLE_NAME(width), width);
   perception::get_param_and_check(nh, GET_VARIABLE_NAME(frequency), frequency);
-  
+
   perception::get_param_and_check(nh, GET_VARIABLE_NAME(display_video), display_video);
 
   cv::VideoCapture cap(camera_file, cv::CAP_V4L2);
