@@ -109,34 +109,37 @@ int main(int argc, char** argv)
       cv::threshold(frm_black, frm_black, 210, 250, cv::THRESH_BINARY);
       markers = aruconano::MarkerDetector::detect(frm_black);
 
-      markers_msg.header.seq++;
-      markers_msg.header.stamp = ros::Time::now();
-      markers_msg.markers.clear();
-
-      for (auto e : markers)
+      if (markers.size() > 0)
       {
-        markers_msg.markers.emplace_back();
-        markers_msg.markers.back().id = e.id;
-        markers_msg.markers.back().x1 = e[0].x;
-        markers_msg.markers.back().y1 = e[0].y;
-        markers_msg.markers.back().x2 = e[1].x;
-        markers_msg.markers.back().y2 = e[1].y;
-        markers_msg.markers.back().x3 = e[2].x;
-        markers_msg.markers.back().y3 = e[2].y;
-        markers_msg.markers.back().x4 = e[3].x;
-        markers_msg.markers.back().y4 = e[3].y;
-      }
-      pub_marker.publish(markers_msg);
-      if (display_video)
-      {
-        cv::cvtColor(frm_black, frm, cv::COLOR_GRAY2RGB);
+        markers_msg.header.seq++;
+        markers_msg.header.stamp = ros::Time::now();
+        markers_msg.markers.clear();
 
         for (auto e : markers)
         {
-          e.draw(frm);
+          markers_msg.markers.emplace_back();
+          markers_msg.markers.back().id = e.id;
+          markers_msg.markers.back().x1 = e[0].x;
+          markers_msg.markers.back().y1 = e[0].y;
+          markers_msg.markers.back().x2 = e[1].x;
+          markers_msg.markers.back().y2 = e[1].y;
+          markers_msg.markers.back().x3 = e[2].x;
+          markers_msg.markers.back().y3 = e[2].y;
+          markers_msg.markers.back().x4 = e[3].x;
+          markers_msg.markers.back().y4 = e[3].y;
         }
-        cv::imshow("Video", frm);
-        cv::waitKey(1);
+        pub_marker.publish(markers_msg);
+        if (display_video)
+        {
+          cv::cvtColor(frm_black, frm, cv::COLOR_GRAY2RGB);
+
+          for (auto e : markers)
+          {
+            e.draw(frm);
+          }
+          cv::imshow("Video", frm);
+          cv::waitKey(1);
+        }
       }
     }
     ros::spinOnce();
