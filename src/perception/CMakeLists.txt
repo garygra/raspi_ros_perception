@@ -7,6 +7,7 @@ project(perception)
 find_package(catkin REQUIRED
   roscpp 
   std_msgs 
+  cv_bridge
   message_generation
 
   )
@@ -134,6 +135,7 @@ file(GLOB EXECUTABLE_FILES ${PROJECT_SOURCE_DIR}/executables/*.cpp)
     # ${PROJECT_SOURCE_DIR}/src/prx/experiments/*.cpp)
 
 foreach(f ${EXECUTABLE_FILES})
+    MESSAGE("file: ${f}")
     GET_FILENAME_COMPONENT(fname ${f} NAME_WE )
     add_executable(${fname} ${f})
     add_dependencies(${fname}
