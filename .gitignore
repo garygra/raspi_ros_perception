@@ -2,7 +2,6 @@ bin/
 out/
 build/
 devel/
-include/
 lib/
 docs/html/
 docs/latex/
