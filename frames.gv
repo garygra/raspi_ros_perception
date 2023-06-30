@@ -1,0 +1,24 @@
+digraph G {
+"car/base_footprint" -> "car/base_link"[label=" Broadcaster: /car/state_publisher\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"car/odom" -> "car/base_footprint"[label=" Broadcaster: /car/racecar_state\nAverage rate: 20.197\nBuffer length: 4.951\nMost recent transform: 1677692183.588\nOldest transform: 1677692178.637\n"];
+"car/base_link" -> "car/insets_link"[label=" Broadcaster: /car/state_publisher\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"car/base_link" -> "car/laser_link"[label=" Broadcaster: /car/state_publisher\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"car/base_link" -> "car/platform_link"[label=" Broadcaster: /car/state_publisher\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"car/base_link" -> "car/camera_bottom_screw_frame"[label=" Broadcaster: /car/state_publisher\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"car/camera_bottom_screw_frame" -> "car/camera_link"[label=" Broadcaster: /car/state_publisher\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"car/camera_link" -> "car/camera_depth_frame"[label=" Broadcaster: /car/camera/realsense2_camera_manager\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"car/camera_depth_frame" -> "car/camera_depth_optical_frame"[label=" Broadcaster: /car/camera/realsense2_camera_manager\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"car/camera_link" -> "car/camera_color_frame"[label=" Broadcaster: /car/camera/realsense2_camera_manager\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"car/camera_color_frame" -> "car/camera_color_optical_frame"[label=" Broadcaster: /car/camera/realsense2_camera_manager\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"map" -> "car/odom"[label=" Broadcaster: /car/racecar_state\nAverage rate: 20.197\nBuffer length: 4.951\nMost recent transform: 1677692183.588\nOldest transform: 1677692178.637\n"];
+"car/base_link" -> "car/back_left/wheel_link"[label=" Broadcaster: /car/state_publisher\nAverage rate: 20.197\nBuffer length: 4.951\nMost recent transform: 1677692183.588\nOldest transform: 1677692178.637\n"];
+"car/base_link" -> "car/back_right/wheel_link"[label=" Broadcaster: /car/state_publisher\nAverage rate: 20.197\nBuffer length: 4.951\nMost recent transform: 1677692183.588\nOldest transform: 1677692178.637\n"];
+"car/base_link" -> "car/front_left/wheel_steer_link"[label=" Broadcaster: /car/state_publisher\nAverage rate: 20.197\nBuffer length: 4.951\nMost recent transform: 1677692183.588\nOldest transform: 1677692178.637\n"];
+"car/front_left/wheel_steer_link" -> "car/front_left/wheel_link"[label=" Broadcaster: /car/state_publisher\nAverage rate: 20.197\nBuffer length: 4.951\nMost recent transform: 1677692183.588\nOldest transform: 1677692178.637\n"];
+"car/base_link" -> "car/front_right/wheel_steer_link"[label=" Broadcaster: /car/state_publisher\nAverage rate: 20.197\nBuffer length: 4.951\nMost recent transform: 1677692183.588\nOldest transform: 1677692178.637\n"];
+"car/front_right/wheel_steer_link" -> "car/front_right/wheel_link"[label=" Broadcaster: /car/state_publisher\nAverage rate: 20.197\nBuffer length: 4.951\nMost recent transform: 1677692183.588\nOldest transform: 1677692178.637\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1677692183.6137526"[ shape=plaintext ] ;
+}->"map";
+}

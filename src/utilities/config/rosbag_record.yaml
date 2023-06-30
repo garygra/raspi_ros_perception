@@ -1,0 +1,30 @@
+topics:
+  # topics must start with "/"
+  topic_1: 
+    name: "/camera_microsoft/pracsys/markers"
+    type: "stamped_markers"
+  topic_2:
+    name: "/camera_c615/pracsys/markers"
+    type: "stamped_markers"
+  topic_3:
+    name: "/camera_logitech/pracsys/markers"
+    type: "stamped_markers"
+  topic_4:
+    name: "/rasPi1_aruco_detection/pracsysPi1/markers"
+    type: "stamped_markers"
+  topic_5:
+    name: "/rasPi2_aruco_detection/pracsysPi2/markers"
+    type: "stamped_markers"
+  topic_6:
+    name: "/aruco_detection/goose/markers"
+    type: "stamped_markers"
+  topic_7:
+    name: "/car/mux/ackermann_cmd_mux/input/navigation"
+    type: "AckermannDriveStamped"
+  topic_8:
+    name: "/omnirobot/motor_ctrl"
+    type: "omnirobot"
+
+
+stop_topic: "/perception/stop"
+rosbag_directory: "/home/pracsys/raspi_ros_perception/out/"

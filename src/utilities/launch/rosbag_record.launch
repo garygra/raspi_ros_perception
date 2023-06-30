@@ -1,0 +1,5 @@
+<launch>
+    <node  pkg="utilities" type="rosbag_record" name="rosbag_record" output="screen">
+        <rosparam command="load" file="$(find utilities)/config/rosbag_record.yaml" />
+    </node>
+</launch>
