@@ -12,11 +12,14 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/videoio.hpp>
+#include <opencv2/aruco.hpp>
 
 #include <ros/ros.h>
 #include <ros/param.h>
 
 #include <std_msgs/Bool.h>
+
+#include <cv_bridge/cv_bridge.h>
 
 #include "aruco/aruco_nano.h"
 
@@ -24,6 +27,9 @@
 #include "perception/stamped_markers.h"
 
 #include "utils.hpp"
+
+cv::Mat camMatrix = (cv::Mat_<double> (3,3) << 817.58251224, 0., 969.25306147, 0., 772.10340966, 655.23802353, 0., 0., 1.);
+cv::Mat distCoeff = (cv::Mat_<double> (1,5) << -0.04806606, 1.18213043, -0.01602457, -0.02912741, -1.31690313);
 
 bool finish_recording = false;
 
@@ -43,10 +49,12 @@ int main(int argc, char** argv)
 
   ros::Subscriber sub_srr = nh.subscribe("/perception/stop", 1, finish_recording_callback);
   ros::Publisher pub_marker = nh.advertise<perception::stamped_markers>(hostname + "/markers", 40);
+  ros::Publisher pub_frm = nh.advertise<sensor_msgs::Image>(hostname + "/rgb_image", 40);
 
   auto fourcc = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
 
   bool display_video{ false };
+  bool use_open_cv{ false };
 
   int height{ 0 };
   int width{ 0 };
@@ -60,6 +68,8 @@ int main(int argc, char** argv)
   perception::get_param_and_check(nh, GET_VARIABLE_NAME(frequency), frequency);
 
   perception::get_param_and_check(nh, GET_VARIABLE_NAME(display_video), display_video);
+
+  perception::get_param_and_check(nh, GET_VARIABLE_NAME(use_open_cv), use_open_cv);
 
   cv::VideoCapture cap(camera_file, cv::CAP_V4L2);
 
@@ -87,9 +97,11 @@ int main(int argc, char** argv)
   ros::Rate loop_rate(frequency * 2);
 
   cv::Mat frm;
+  cv::Mat resized_frm;
   cv::Mat frm_black;
 
   std::vector<aruconano::Marker> markers;
+  std::vector<int> markerIds;
 
   int marker_id;
 
@@ -105,42 +117,71 @@ int main(int argc, char** argv)
   {
     if (cap.read(frm))
     {
+      cv::resize(frm, resized_frm, cv::Size(720, 480), cv::INTER_LINEAR);
       cv::cvtColor(frm, frm_black, cv::COLOR_RGB2GRAY);
       cv::threshold(frm_black, frm_black, 210, 250, cv::THRESH_BINARY);
-      markers = aruconano::MarkerDetector::detect(frm_black);
 
-      if (markers.size() > 0)
-      {
-        markers_msg.header.seq++;
-        markers_msg.header.stamp = ros::Time::now();
-        markers_msg.markers.clear();
+      if (use_open_cv) {
+         std::vector<int> availableDictionaries = cv::aruco::getPredefinedDictionaryNames();
+         cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_ARUCO_MIP_36h12);
 
-        for (auto e : markers)
+         // Initialize the detector parameters using default values
+         cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
+
+         // Declare the vectors that would contain the detected marker corners and the rejected marker candidates
+         std::vector<std::vector<cv::Point2f>> markerCorners, rejectedCandidates;
+
+         // The ids of the detected markers are stored in a vector
+         cv::aruco::detectMarkers(frm, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
+      } else {
+        markers = aruconano::MarkerDetector::detect(frm_black);
+        if (markers.size() > 0)
         {
-          markers_msg.markers.emplace_back();
-          markers_msg.markers.back().id = e.id;
-          markers_msg.markers.back().x1 = e[0].x;
-          markers_msg.markers.back().y1 = e[0].y;
-          markers_msg.markers.back().x2 = e[1].x;
-          markers_msg.markers.back().y2 = e[1].y;
-          markers_msg.markers.back().x3 = e[2].x;
-          markers_msg.markers.back().y3 = e[2].y;
-          markers_msg.markers.back().x4 = e[3].x;
-          markers_msg.markers.back().y4 = e[3].y;
-        }
-        pub_marker.publish(markers_msg);
-        if (display_video)
-        {
-          cv::cvtColor(frm_black, frm, cv::COLOR_GRAY2RGB);
+          markers_msg.header.seq++;
+          markers_msg.header.stamp = ros::Time::now();
+          markers_msg.markers.clear();
+
+          float markerSize=0.165;//16.5cm and 20.5 with the white border
 
           for (auto e : markers)
           {
-            e.draw(frm);
+            if (e.id != 0) continue; // To only have the mushr's tag details
+            auto r_t=e.estimatePose(camMatrix,distCoeff,markerSize);
+            markers_msg.markers.emplace_back();
+            markers_msg.markers.back().id = e.id;
+            markers_msg.markers.back().x1 = e[0].x;
+            markers_msg.markers.back().y1 = e[0].y;
+            markers_msg.markers.back().x2 = e[1].x;
+            markers_msg.markers.back().y2 = e[1].y;
+            markers_msg.markers.back().x3 = e[2].x;
+            markers_msg.markers.back().y3 = e[2].y;
+            markers_msg.markers.back().x4 = e[3].x;
+            markers_msg.markers.back().y4 = e[3].y;
+            markers_msg.markers.back().r1 = r_t.first.at<double>(0,0);
+            markers_msg.markers.back().r2 = r_t.first.at<double>(1,0);
+            markers_msg.markers.back().r3 = r_t.first.at<double>(2,0);
+            markers_msg.markers.back().t1 = r_t.second.at<double>(0,0);
+            markers_msg.markers.back().t2 = r_t.second.at<double>(1,0);
+            markers_msg.markers.back().t3 = r_t.second.at<double>(2,0);
           }
-          cv::imshow("Video", frm);
-          cv::waitKey(1);
+          pub_marker.publish(markers_msg);
+          if (display_video)
+          {
+            cv::cvtColor(frm_black, frm, cv::COLOR_GRAY2RGB);
+
+            for (auto e : markers)
+            {
+              e.draw(frm);
+            }
+            cv::imshow("Video", frm);
+            cv::waitKey(1);
+          }
         }
       }
+
+      auto img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", resized_frm).toImageMsg();
+      img_msg->header.stamp = ros::Time::now();
+      pub_frm.publish(img_msg);
     }
     ros::spinOnce();
   }

@@ -1,3 +1,4 @@
+#ifdef IGNORE_THIS_FILE
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -17,8 +18,8 @@
 #include <ros/param.h>
 
 #include <std_msgs/Bool.h>
-#include <geometry_msgs/Pose>
-#include <geometry_msgs/PoseArray>
+#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseArray.h>
 
 #include "aruco/aruco_nano.h"
 
@@ -41,7 +42,7 @@ void finish_recording_callback(const std_msgs::Bool& msg)
 
 void markers_callback(const perception::stamped_markers& markers_msg)
 {
-    current_markers = markers_masg; // Might need extra lines to copy the vector
+    current_markers = markers_msg; // Might need extra lines to copy the vector
 }
 
 // Use cam_matrix, dist_coeff and markerSize to estimate current_pose
@@ -119,3 +120,6 @@ int main(int argc, char** argv)
   std::cout << "Finished." << std::endl;
   return 0;
 }
+#else
+int main() {return 0;}
+#endif

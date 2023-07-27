@@ -19,3 +19,9 @@ resources/input_files/mazes/*.yaml
 src/CMakeLists.txt
 .vscode/
 .catkin_workspace
+src/perception/bags/
+src/plan1/
+src/plan2/
+src/plan3/
+src/plan4/
+

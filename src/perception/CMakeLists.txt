@@ -6,12 +6,15 @@ project(perception)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED
   roscpp 
+  roslib
   std_msgs 
+  geometry_msgs
   cv_bridge
   message_generation
-
   )
 find_package(OpenCV REQUIRED)
+find_package(Torch REQUIRED)
+add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -105,7 +108,7 @@ add_message_files(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES perception
-    CATKIN_DEPENDS message_runtime
+    CATKIN_DEPENDS message_runtime roscpp roslib
 #  DEPENDS system_lib
 )
 
@@ -118,6 +121,7 @@ catkin_package(
 # include_directories(include)
 include_directories(include 
 	${catkin_INCLUDE_DIRS}		
+  ${TORCH_INCLUDE_DIRS}
 	)
 ## Declare a C++ library
 # add_library(perception
@@ -140,10 +144,12 @@ foreach(f ${EXECUTABLE_FILES})
     add_executable(${fname} ${f})
     add_dependencies(${fname}
                      ${${PROJECT_NAME}_EXPORTED_TARGETS} 
-                     ${catkin_EXPORTED_TARGETS})
+                     ${catkin_EXPORTED_TARGETS}
+                     geometry_msgs)
     target_link_libraries(${fname}
                           ${catkin_LIBRARIES}
                           ${OpenCV_LIBS}
+                          ${TORCH_LIBRARIES}
                         )
 endforeach()
 # add_executable(video_gatherer_cpp src/vid_gather_cpp.cpp)
