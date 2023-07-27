@@ -119,7 +119,7 @@ int main(int argc, char** argv)
 
     std::cout << "topic_name: " << topic_name << std::endl;
     ROS_INFO_STREAM("Topic: " << topic_name << " - " << topic_type);
-    if (topic_type == "string")
+    if (topic_type == "string")  
     {  // TODO: pass this to a class?
       string_queue.emplace_back(topic_name);
       subscribers.push_back(
