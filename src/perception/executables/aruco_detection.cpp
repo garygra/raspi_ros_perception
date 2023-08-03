@@ -100,18 +100,25 @@ int main(int argc, char** argv)
   cv::Mat resized_frm;
   cv::Mat frm_black;
 
+  // ArucoNano variables
   std::vector<aruconano::Marker> markers;
-  std::vector<int> markerIds;
 
-  int marker_id;
+  // Open CV Aruco Detector Variables
+  std::vector<int> markerIds;
+  std::vector<std::vector<cv::Point2f>> markerCorners, rejectedCandidates;
+  cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250); // Sets the dictionary for the aruco marker family
+  // Initialize the detector parameters using default values
+  cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
+  cv::Vec3d rvecs, tvecs;  // Rotation and translation vectors for each marker
+  cv::Mat objPoints(4, 1, CV_32FC3);
 
   ros::Time t;
 
-  // perception::marker marker;
   perception::stamped_markers markers_msg;
 
   markers_msg.header.seq = 0;
   markers_msg.header.frame_id = "";  // Not sure what to put here :s
+  float markerSize=0.147;//16.5cm and 20.5 with the white border
 
   while (!finish_recording)
   {
@@ -120,29 +127,15 @@ int main(int argc, char** argv)
       cv::resize(frm, resized_frm, cv::Size(720, 480), cv::INTER_LINEAR);
       cv::cvtColor(frm, frm_black, cv::COLOR_RGB2GRAY);
       cv::threshold(frm_black, frm_black, 210, 250, cv::THRESH_BINARY);
+      
+      markers_msg.header.seq++;
+      markers_msg.header.stamp = ros::Time::now();
+      markers_msg.markers.clear();
 
-      if (use_open_cv) {
-         std::vector<int> availableDictionaries = cv::aruco::getPredefinedDictionaryNames();
-         cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_ARUCO_MIP_36h12);
-
-         // Initialize the detector parameters using default values
-         cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
-
-         // Declare the vectors that would contain the detected marker corners and the rejected marker candidates
-         std::vector<std::vector<cv::Point2f>> markerCorners, rejectedCandidates;
-
-         // The ids of the detected markers are stored in a vector
-         cv::aruco::detectMarkers(frm, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
-      } else {
         markers = aruconano::MarkerDetector::detect(frm_black);
+
         if (markers.size() > 0)
         {
-          markers_msg.header.seq++;
-          markers_msg.header.stamp = ros::Time::now();
-          markers_msg.markers.clear();
-
-          float markerSize=0.165;//16.5cm and 20.5 with the white border
-
           for (auto e : markers)
           {
             if (e.id != 0) continue; // To only have the mushr's tag details
@@ -164,10 +157,9 @@ int main(int argc, char** argv)
             markers_msg.markers.back().t2 = r_t.second.at<double>(1,0);
             markers_msg.markers.back().t3 = r_t.second.at<double>(2,0);
           }
-          pub_marker.publish(markers_msg);
           if (display_video)
           {
-            cv::cvtColor(frm_black, frm, cv::COLOR_GRAY2RGB);
+            //cv::cvtColor(frm_black, frm, cv::COLOR_GRAY2RGB);
 
             for (auto e : markers)
             {
@@ -177,7 +169,9 @@ int main(int argc, char** argv)
             cv::waitKey(1);
           }
         }
-      }
+      
+      
+      pub_marker.publish(markers_msg);
 
       auto img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", resized_frm).toImageMsg();
       img_msg->header.stamp = ros::Time::now();

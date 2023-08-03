@@ -1,6 +1,6 @@
-camera_file: "/dev/video2"
-height: 1080 
-width: 1920
-frequency: 60
-display_video: true
+camera_file: "/dev/video0"
+height: 720 
+width: 1080
+frequency: 50
+display_video: false
 use_open_cv: false

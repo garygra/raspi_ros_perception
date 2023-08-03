@@ -55,8 +55,6 @@ cam_extrinsics = np.array([
     [0.,0.,0.,1.]
 ])
 
-'''
-'''
 # x_converter = 0.865
 # y_converter = 1.02
 
@@ -311,6 +309,7 @@ def plot_msg_hist(bag_file):
 
             if init_time is None:
                 init_time = time_in_secs
+
 
             is_mushr_detected = False
 
