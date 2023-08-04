@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 
   ros::Subscriber sub_srr = nh.subscribe("/perception/stop", 1, finish_recording_callback);
   ros::Publisher pub_frm =
-      nh.advertise<sensor_msgs::Image>("/omnirobot/" + ros::this_node::getNamespace() + "/rgb_image", 40);
+      nh.advertise<sensor_msgs::Image>(hostname + "/rgb_image", 40);
 
   auto fourcc = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
 
@@ -85,6 +85,7 @@ int main(int argc, char** argv)
   ros::Rate loop_rate(frequency * 2);
 
   ros::Time t;
+  cv::Mat frm;
 
   while (!finish_recording)
   {
@@ -92,9 +93,9 @@ int main(int argc, char** argv)
     {
       cv::resize(frm, frm, cv::Size(720, 480), cv::INTER_LINEAR);
 
-      auto color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", color_frame).toImageMsg();
-      color_msg->header.stamp = ros::Time::now();
-      pub_frm.publish(markers_msg);
+      auto img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frm).toImageMsg();
+      img_msg->header.stamp = ros::Time::now();
+      pub_frm.publish(img_msg);
     }
     ros::spinOnce();
   }
