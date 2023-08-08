@@ -1,3 +1,5 @@
+
+
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -121,14 +123,15 @@ int main(int argc, char** argv)
       cv::resize(frm, resized_frm, cv::Size(720, 480), cv::INTER_LINEAR);
       cv::cvtColor(frm, frm_black, cv::COLOR_RGB2GRAY);
       cv::threshold(frm_black, frm_black, 210, 250, cv::THRESH_BINARY);
-      
-      markers_msg.header.seq++;
-      markers_msg.header.stamp = ros::Time::now();
-      markers_msg.markers.clear();
+      markers = aruconano::MarkerDetector::detect(frm_black);
 
-        markers = aruconano::MarkerDetector::detect(frm_black);
+      if (markers.size() > 0)
+      {
+        markers_msg.header.seq++;
+        markers_msg.header.stamp = ros::Time::now();
+        markers_msg.markers.clear();
 
-        if (markers.size() > 0)
+        for (auto e : markers)
         {
           for (auto e : markers)
           {
@@ -162,13 +165,12 @@ int main(int argc, char** argv)
             cv::imshow("Video", frm);
           }
         }
-      
-      
-      pub_marker.publish(markers_msg);
+        pub_marker.publish(markers_msg);
 
-      auto img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", resized_frm).toImageMsg();
-      img_msg->header.stamp = ros::Time::now();
-      pub_frm.publish(img_msg);
+        auto img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frm).toImageMsg();
+        img_msg->header.stamp = ros::Time::now();
+        pub_frm.publish(img_msg);
+      }
     }
     ros::spinOnce();
   }
@@ -179,3 +181,4 @@ int main(int argc, char** argv)
   std::cout << "Finished." << std::endl;
   return 0;
 }
+
