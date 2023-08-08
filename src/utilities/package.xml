@@ -2,9 +2,9 @@
 <!-- <package> -->
 <package format="2">
 
-  <name>perception</name>
+  <name>utilities</name>
   <version>0.1.0</version>
-  <description>The perception package</description>
+  <description>The utilities package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -41,20 +41,15 @@
   <!--   <run_depend>message_runtime</run_depend> -->
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
-    <build_depend>std_msgs</build_depend>
-    <build_depend>message_generation</build_depend>
-    <depend>message_runtime</depend>
-    <exec_depend>std_msgs</exec_depend>
-    <buildtool_depend>catkin</buildtool_depend>
-    <build_depend>geometry_msgs</build_depend>
-    <exec_depend>geometry_msgs</exec_depend>
-    <build_depend>sensor_msgs</build_depend>
-    <exec_depend>sensor_msgs</exec_depend>
-    <build_depend>roslib</build_depend> 
-    <exec_depend>roslib</exec_depend>
-    <build_depend>roscpp</build_depend> 
-    <exec_depend>roscpp</exec_depend>
+  <buildtool_depend>catkin</buildtool_depend>
 
+  <build_depend>std_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>perception</build_depend>
+  <build_depend>rosbag</build_depend>
+  
+  <exec_depend>perception</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

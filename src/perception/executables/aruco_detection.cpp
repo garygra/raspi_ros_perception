@@ -21,12 +21,17 @@
 
 #include <std_msgs/Bool.h>
 
+#include <cv_bridge/cv_bridge.h>
+
 #include "aruco/aruco_nano.h"
 
 #include "perception/marker.h"
 #include "perception/stamped_markers.h"
 
 #include "utils.hpp"
+
+cv::Mat camMatrix = (cv::Mat_<double> (3,3) << 817.58251224, 0., 969.25306147, 0., 772.10340966, 655.23802353, 0., 0., 1.);
+cv::Mat distCoeff = (cv::Mat_<double> (1,5) << -0.04806606, 1.18213043, -0.01602457, -0.02912741, -1.31690313);
 
 bool finish_recording = false;
 
@@ -51,6 +56,7 @@ int main(int argc, char** argv)
   auto fourcc = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
 
   bool display_video{ false };
+  bool use_open_cv{ false };
 
   int height{ 0 };
   int width{ 0 };
@@ -64,6 +70,8 @@ int main(int argc, char** argv)
   perception::get_param_and_check(nh, GET_VARIABLE_NAME(frequency), frequency);
 
   perception::get_param_and_check(nh, GET_VARIABLE_NAME(display_video), display_video);
+
+  perception::get_param_and_check(nh, GET_VARIABLE_NAME(use_open_cv), use_open_cv);
 
   cv::VideoCapture cap(camera_file, cv::CAP_V4L2);
 
@@ -91,24 +99,34 @@ int main(int argc, char** argv)
   ros::Rate loop_rate(frequency * 2);
 
   cv::Mat frm;
+  cv::Mat resized_frm;
   cv::Mat frm_black;
 
+  // ArucoNano variables
   std::vector<aruconano::Marker> markers;
 
-  int marker_id;
+  // Open CV Aruco Detector Variables
+  std::vector<int> markerIds;
+  std::vector<std::vector<cv::Point2f>> markerCorners, rejectedCandidates;
+  cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250); // Sets the dictionary for the aruco marker family
+  // Initialize the detector parameters using default values
+  cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
+  cv::Vec3d rvecs, tvecs;  // Rotation and translation vectors for each marker
+  cv::Mat objPoints(4, 1, CV_32FC3);
 
   ros::Time t;
 
-  // perception::marker marker;
   perception::stamped_markers markers_msg;
 
   markers_msg.header.seq = 0;
   markers_msg.header.frame_id = "";  // Not sure what to put here :s
+  float markerSize=0.147;//16.5cm and 20.5 with the white border
 
   while (!finish_recording)
   {
     if (cap.read(frm))
     {
+      cv::resize(frm, resized_frm, cv::Size(720, 480), cv::INTER_LINEAR);
       cv::cvtColor(frm, frm_black, cv::COLOR_RGB2GRAY);
       cv::threshold(frm_black, frm_black, 210, 250, cv::THRESH_BINARY);
       markers = aruconano::MarkerDetector::detect(frm_black);

@@ -1,0 +1,98 @@
+import sys
+
+import rosbag
+from std_msgs.msg import Int32, String
+from ackermann_msgs.msg import AckermannDriveStamped
+from utilities.msg import omnirobot
+
+from perception.msg import stamped_markers
+from argparse import ArgumentParser
+
+sep = " "
+
+def header_to_txt(msg, out):
+    global sep
+    if msg._type == "std_msgs/Header":
+        return out + str(msg.seq) + sep + str(msg.stamp.secs) + sep + str(msg.stamp.nsecs)
+
+def marker_to_txt(msg, out):
+    global sep
+    if msg._type == "perception/marker":    
+        out += str(msg.id) + sep 
+        out += str(msg.x1) + sep + str(msg.y1) + sep 
+        out += str(msg.x2) + sep + str(msg.y2) + sep 
+        out += str(msg.x3) + sep + str(msg.y3) + sep 
+        out += str(msg.x4) + sep + str(msg.y4)
+        return out
+
+def stamped_markers_to_txt(msg, out):
+    global sep
+    if msg._type == "perception/stamped_markers":
+        out_m = ""
+        out = header_to_txt(msg.header, out) + sep
+        for marker in msg.markers:
+            out_m += marker_to_txt(marker, out) + "\n"
+        return out_m
+
+def omnirobot_to_txt(msg, out):
+    global sep
+    if msg._type == "utilities/omnirobot":
+        out = header_to_txt(msg.header, out) + sep
+        out += str(msg.m1) + sep
+        out += str(msg.m2) + sep
+        out += str(msg.m3) + sep
+        out += str(msg.m4)
+        return out
+
+def ackermann_drive_to_txt(msg, out):
+    global sep
+    if msg._type == "ackermann_msgs/AckermannDrive":
+        out += str(msg.steering_angle) + sep
+        out += str(msg.steering_angle_velocity) + sep
+        out += str(msg.speed) + sep
+        out += str(msg.acceleration) + sep
+        out += str(msg.jerk)
+        return out
+
+def ackermann_drive_stamped_to_txt(msg, out):
+    global sep
+    if msg._type == "ackermann_msgs/AckermannDriveStamped":
+        out = header_to_txt(msg.header, out) + sep
+        out = ackermann_drive_to_txt(msg.drive, out)
+        return out
+        
+if __name__ == '__main__':
+
+
+    parser = ArgumentParser()
+    parser.add_argument("-b", "--bag", dest="bag",
+                    help="Rosbag to read from", metavar="bag")
+    parser.add_argument("-o", "--out", dest="out_file", default=True,
+                    help="Out file")
+
+    args = parser.parse_args()
+    bag_name = args.bag;
+    out_filename = bag_name.replace("bag", "txt")
+    print(args.bag)
+    print(out_filename)
+
+    bag = rosbag.Bag(bag_name, 'r')
+    outfile = open(out_filename, 'w')
+
+    to_txt_fs = [omnirobot_to_txt, header_to_txt, marker_to_txt, stamped_markers_to_txt, ackermann_drive_to_txt, ackermann_drive_stamped_to_txt]
+
+
+    try:
+        for topic, msg, t in bag.read_messages():
+            # out = 
+            for f in to_txt_fs:
+                out = str(topic) + sep + str(msg._type) + sep + str(t.secs) + sep + str(t.nsecs) + sep;
+                line = f(msg, out)
+                if line != None:
+                    outfile.write( line + "\n" )
+                # print(f(msg))
+            # print(stamped_markers_to_txt(msg))
+            # print(msg._type, topic, t)
+    finally:
+        bag.close()
+        outfile.close()

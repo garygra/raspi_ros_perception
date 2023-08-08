@@ -1,20 +1,23 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(perception)
+project(utilities)
 
+add_compile_options(-std=c++17)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED
   roscpp 
-  roslib
   std_msgs 
-  geometry_msgs
   cv_bridge
+  rosbag
+  rosbag_storage
+  topic_tools
+  genmsg
+  perception
+  ros_type_introspection
   message_generation
   )
 find_package(OpenCV REQUIRED)
-find_package(Torch REQUIRED)
-add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -52,8 +55,7 @@ add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  marker.msg
-  stamped_markers.msg
+  omnirobot.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -108,7 +110,7 @@ add_message_files(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES perception
-    CATKIN_DEPENDS message_runtime roscpp roslib
+    CATKIN_DEPENDS perception message_runtime
 #  DEPENDS system_lib
 )
 
@@ -121,7 +123,6 @@ catkin_package(
 # include_directories(include)
 include_directories(include 
 	${catkin_INCLUDE_DIRS}		
-  ${TORCH_INCLUDE_DIRS}
 	)
 ## Declare a C++ library
 # add_library(perception
@@ -144,12 +145,10 @@ foreach(f ${EXECUTABLE_FILES})
     add_executable(${fname} ${f})
     add_dependencies(${fname}
                      ${${PROJECT_NAME}_EXPORTED_TARGETS} 
-                     ${catkin_EXPORTED_TARGETS}
-                     geometry_msgs)
+                     ${catkin_EXPORTED_TARGETS})
     target_link_libraries(${fname}
                           ${catkin_LIBRARIES}
                           ${OpenCV_LIBS}
-                          ${TORCH_LIBRARIES}
                         )
 endforeach()
 # add_executable(video_gatherer_cpp src/vid_gather_cpp.cpp)
