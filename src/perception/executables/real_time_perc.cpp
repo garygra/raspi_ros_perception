@@ -1,3 +1,5 @@
+#ifndef TORCH_NOT_BUILT
+
 #include "real_time_perception.hpp"
 #include <chrono>
 #include <ctime> 
@@ -33,3 +35,8 @@ int main(int argc, char** argv) {
     ros::Rate loop_rate(30);
     ros::spin();
 }
+#else
+int main(int argc, char* argv[])
+{
+}
+#endif

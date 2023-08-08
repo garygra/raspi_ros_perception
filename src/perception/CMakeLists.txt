@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(perception)
 
+set(BUILD_FOR_TORCH  ON CACHE BOOL "Set ON/TRUE for building using Torch")
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -13,8 +14,21 @@ find_package(catkin REQUIRED
   message_generation
   )
 find_package(OpenCV REQUIRED)
-find_package(Torch REQUIRED)
+# find_package(Torch REQUIRED)
 add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
+
+if(BUILD_FOR_TORCH)
+	if(DEFINED ENV{Torch_DIR})
+        find_package(Torch REQUIRED)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+    else()
+		message("Please download libtorch C++, place in external folder and setup the enviornmental variable Torch_DIR accordingly.")
+        add_definitions(TORCH_NOT_BUILT)
+    endif()
+else()
+    add_definitions(-DTORCH_NOT_BUILT)
+endif()
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
