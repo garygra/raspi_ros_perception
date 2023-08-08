@@ -10,7 +10,7 @@ topics:
     name: "/camera_logitech/pracsys/markers"
     type: "stamped_markers"
   topic_4:
-    name: "/rasPi1_aruco_detection/pracsysPi1/markers"
+    name: "/aruco_detection/pracsysPi1/markers"
     type: "stamped_markers"
   topic_5:
     name: "/rasPi2_aruco_detection/pracsysPi2/markers"

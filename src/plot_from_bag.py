@@ -395,5 +395,10 @@ def get_two_tags_dist():
     coords_52 = np.mean(perc_traj[52], axis=0)
     coords_50 = np.mean(perc_traj[50], axis=0)
     print(np.abs(coords_50 - coords_52))
+
+def check_bag_img_frq():
+    bag_path = '/home/pracsys/raspi_ros_perception/out/image_bags/raspi_2023-08-04-13-54-57.bag'
+    
+
 if __name__ == '__main__':
-    main()
+    check_bag_img_frq()

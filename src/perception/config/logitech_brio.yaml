@@ -2,5 +2,5 @@ camera_file: "/dev/video0"
 height: 720 
 width: 1080
 frequency: 50
-display_video: false
+display_video: true
 use_open_cv: false

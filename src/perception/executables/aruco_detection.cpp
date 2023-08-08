@@ -12,7 +12,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/videoio.hpp>
-#include <opencv2/aruco.hpp>
+
 
 #include <ros/ros.h>
 #include <ros/param.h>
@@ -40,6 +40,9 @@ void finish_recording_callback(const std_msgs::Bool& msg)
 
 int main(int argc, char** argv)
 {
+
+  int num_frames = 0;
+
   char hostname_[HOST_NAME_MAX];
   gethostname(hostname_, HOST_NAME_MAX);
   std::string hostname(hostname_);
@@ -69,13 +72,12 @@ int main(int argc, char** argv)
 
   perception::get_param_and_check(nh, GET_VARIABLE_NAME(display_video), display_video);
 
-  perception::get_param_and_check(nh, GET_VARIABLE_NAME(use_open_cv), use_open_cv);
-
   cv::VideoCapture cap(camera_file, cv::CAP_V4L2);
 
   cap.set(cv::CAP_PROP_FRAME_WIDTH, width);
   cap.set(cv::CAP_PROP_FRAME_HEIGHT, height);
   cap.set(cv::CAP_PROP_FPS, frequency);
+  cap.set(cv::CAP_PROP_BUFFERSIZE, 10);
 
   cap.set(cv::CAP_PROP_AUTOFOCUS, 0);
   cap.set(cv::CAP_PROP_AUTO_WB, 1);
@@ -103,16 +105,7 @@ int main(int argc, char** argv)
   // ArucoNano variables
   std::vector<aruconano::Marker> markers;
 
-  // Open CV Aruco Detector Variables
-  std::vector<int> markerIds;
-  std::vector<std::vector<cv::Point2f>> markerCorners, rejectedCandidates;
-  cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250); // Sets the dictionary for the aruco marker family
-  // Initialize the detector parameters using default values
-  cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
-  cv::Vec3d rvecs, tvecs;  // Rotation and translation vectors for each marker
-  cv::Mat objPoints(4, 1, CV_32FC3);
-
-  ros::Time t;
+  ros::Time t1 = ros::Time::now();
 
   perception::stamped_markers markers_msg;
 
@@ -124,6 +117,7 @@ int main(int argc, char** argv)
   {
     if (cap.read(frm))
     {
+      num_frames++;
       cv::resize(frm, resized_frm, cv::Size(720, 480), cv::INTER_LINEAR);
       cv::cvtColor(frm, frm_black, cv::COLOR_RGB2GRAY);
       cv::threshold(frm_black, frm_black, 210, 250, cv::THRESH_BINARY);
@@ -159,14 +153,13 @@ int main(int argc, char** argv)
           }
           if (display_video)
           {
-            //cv::cvtColor(frm_black, frm, cv::COLOR_GRAY2RGB);
+            cv::cvtColor(frm_black, frm, cv::COLOR_GRAY2RGB);
 
             for (auto e : markers)
             {
               e.draw(frm);
             }
             cv::imshow("Video", frm);
-            cv::waitKey(1);
           }
         }
       
@@ -179,6 +172,9 @@ int main(int argc, char** argv)
     }
     ros::spinOnce();
   }
+
+  ros::Time t2 = ros::Time::now();
+  std::cout << t2-t1 <<" - " <<num_frames<<std::endl;
 
   std::cout << "Finished." << std::endl;
   return 0;

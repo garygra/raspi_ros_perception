@@ -5,6 +5,7 @@
 #include <chrono>
 
 #include <nav_msgs/Odometry.h>
+#include <sensor_msgs/Image.h>
 #include "perception/stamped_markers.h"
 #include "perception/marker.h"
 
@@ -15,9 +16,10 @@ class RealTimePerception
 {
     private:
     float odom_x, odom_y, odom_z, init_odom_x, init_odom_y, init_odom_z, perc_x, perc_y, init_perc_x, init_perc_y;
-    bool first_perception_message, first_odometry_message;
-    int perception_callback_count = 0;
+    bool first_perception_message, first_odometry_message, first_raspi_img_message;
+    int perception_callback_count = 0, image_callback_count = 0;
     double init_timestamp, last_log_timestamp;
+    std::time_t first_img_timestamp;
     std::vector<double> log_times;
 
     public:
@@ -32,6 +34,7 @@ class RealTimePerception
     {
         first_perception_message = true;
         first_odometry_message = true;
+        first_raspi_img_message = true;
         
         ROS_INFO_STREAM(controller_path);
         torch::manual_seed(123456);
@@ -117,5 +120,18 @@ class RealTimePerception
 
         //     float dist = std::sqrt(std::pow(init_perc_x - perc_x, 2) + std::pow(init_perc_y - perc_y, 2));
         // }
+    }
+
+    void raspi_img_callback(const sensor_msgs::Image& msg) {
+        std::time_t curr_img_timestamp = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        if (first_raspi_img_message) {
+            first_img_timestamp = curr_img_timestamp;
+            first_raspi_img_message = false;
+        }
+        
+        double interval_in_secs = difftime(curr_img_timestamp, first_img_timestamp);
+        image_callback_count++;
+
+        std::cout << "Freq: " << image_callback_count/interval_in_secs << std::endl;
     }
 };
