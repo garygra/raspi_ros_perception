@@ -1,3 +1,5 @@
+
+
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -12,6 +14,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/videoio.hpp>
+#include <cv_bridge/cv_bridge.h>
 
 #include <ros/ros.h>
 #include <ros/param.h>
@@ -43,6 +46,7 @@ int main(int argc, char** argv)
 
   ros::Subscriber sub_srr = nh.subscribe("/perception/stop", 1, finish_recording_callback);
   ros::Publisher pub_marker = nh.advertise<perception::stamped_markers>(hostname + "/markers", 40);
+  ros::Publisher pub_frm = nh.advertise<sensor_msgs::Image>(hostname + "/rgb_image", 40);
 
   auto fourcc = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
 
@@ -129,17 +133,10 @@ int main(int argc, char** argv)
           markers_msg.markers.back().y4 = e[3].y;
         }
         pub_marker.publish(markers_msg);
-        if (display_video)
-        {
-          cv::cvtColor(frm_black, frm, cv::COLOR_GRAY2RGB);
 
-          for (auto e : markers)
-          {
-            e.draw(frm);
-          }
-          cv::imshow("Video", frm);
-          cv::waitKey(1);
-        }
+        auto img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frm).toImageMsg();
+        img_msg->header.stamp = ros::Time::now();
+        pub_frm.publish(img_msg);
       }
     }
     ros::spinOnce();
@@ -148,3 +145,4 @@ int main(int argc, char** argv)
   std::cout << "Finished." << std::endl;
   return 0;
 }
+
