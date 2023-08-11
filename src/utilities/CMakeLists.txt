@@ -14,7 +14,6 @@ find_package(catkin REQUIRED
   topic_tools
   genmsg
   perception
-  ros_type_introspection
   message_generation
   )
 find_package(OpenCV REQUIRED)
