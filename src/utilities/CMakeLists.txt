@@ -8,6 +8,7 @@ add_compile_options(-std=c++17)
 find_package(catkin REQUIRED
   roscpp 
   std_msgs 
+  ackermann_msgs
   cv_bridge
   rosbag
   rosbag_storage
