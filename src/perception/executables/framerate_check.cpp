@@ -69,11 +69,11 @@ int main(int argc, char** argv)
   }
   
   cv::Mat frm;
-  const double total_duration{30};
+  const double total_duration{30.0};
   std::size_t frames_read{0};
 
   auto start = std::chrono::steady_clock::now();
-  auto elapsed_seconds = std::chrono::steady_clock::now() - start;
+  std::chrono::duration<double> elapsed_seconds{std::chrono::steady_clock::now() - start};
   while (elapsed_seconds.count() < total_duration) 
   {
     if (cap.read(frm))
