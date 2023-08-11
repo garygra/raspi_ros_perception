@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="perception" type="framerate_check" name="framerate_check" output="screen">
+    <rosparam command="load" file="$(find perception)/config/logitech_brio.yaml" />
+    </node>
+</launch>
