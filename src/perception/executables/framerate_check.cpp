@@ -81,9 +81,11 @@ int main(int argc, char** argv)
         frames_read++;
     }
     elapsed_seconds = std::chrono::steady_clock::now() - start;
+
   }
   std::cout << "frames_read: " << frames_read << std::endl;
   std::cout << "elapsed_seconds: " << elapsed_seconds.count() << std::endl;
+  std::cout << "avg frame rate: " << frames_read / elapsed_seconds.count() << " fps" << std::endl;
   std::cout << "Finished." << std::endl;
   return 0;
 }
