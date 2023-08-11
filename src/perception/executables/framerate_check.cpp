@@ -54,10 +54,10 @@ int main(int argc, char** argv)
   cap.set(cv::CAP_PROP_AUTO_WB, 1);
   cap.set(cv::CAP_PROP_AUTO_EXPOSURE, 0);
 
-  ROS_DEBUG_STREAM("Camera: " << camera_file);
-  ROS_DEBUG_STREAM("cv::CAP_PROP_FRAME_WIDTH: " << cap.get(cv::CAP_PROP_FRAME_WIDTH));
-  ROS_DEBUG_STREAM("cv::CAP_PROP_FRAME_HEIGHT: " << cap.get(cv::CAP_PROP_FRAME_HEIGHT));
-  ROS_DEBUG_STREAM("cv::CAP_PROP_FPS: " << cap.get(cv::CAP_PROP_FPS));
+  std::cout << "Camera: " << camera_file);
+  std::cout << "cv::CAP_PROP_FRAME_WIDTH: " << cap.get(cv::CAP_PROP_FRAME_WIDTH));
+  std::cout << "cv::CAP_PROP_FRAME_HEIGHT: " << cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+  std::cout << "cv::CAP_PROP_FPS: " << cap.get(cv::CAP_PROP_FPS));
 
   if (!cap.isOpened())
   {
