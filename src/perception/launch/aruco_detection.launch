@@ -1,5 +1,5 @@
 <launch>
-    <node pkg="perception" type="aruco_detection" name="camera_logitech" output="screen">
+    <node pkg="perception" type="aruco_detection" name="aruco_detection" output="screen">
         <rosparam command="load" file="$(find perception)/config/aruco_detection.yaml" />
     </node>
     <!--node pkg="rosbag" type="record" name="rosbag_record_standard_data" output="screen" args="-o /home/pracsys/raspi_ros_perception/out/image_bags/test /camera_logitech/pracsys/rgb_image" /-->
