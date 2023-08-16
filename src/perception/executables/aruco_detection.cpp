@@ -120,7 +120,7 @@ int main(int argc, char** argv)
     if (cap.read(frm))
     {
       num_frames++;
-      cv::resize(frm, resized_frm, cv::Size(720, 480), cv::INTER_LINEAR);
+      //cv::resize(frm, resized_frm, cv::Size(720, 480), cv::INTER_LINEAR);
       cv::cvtColor(frm, frm_black, cv::COLOR_RGB2GRAY);
       cv::threshold(frm_black, frm_black, 210, 250, cv::THRESH_BINARY);
       markers = aruconano::MarkerDetector::detect(frm_black);

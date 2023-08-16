@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(perception)
 
-set(BUILD_FOR_TORCH  ON CACHE BOOL "Set ON/TRUE for building using Torch")
+set(BUILD_FOR_TORCH OFF CACHE BOOL "Set ON/TRUE for building using Torch")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)

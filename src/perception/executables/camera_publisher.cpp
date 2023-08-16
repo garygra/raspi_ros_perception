@@ -73,6 +73,10 @@ int main(int argc, char** argv)
   ROS_DEBUG_STREAM("cv::CAP_PROP_FRAME_WIDTH: " << cap.get(cv::CAP_PROP_FRAME_WIDTH));
   ROS_DEBUG_STREAM("cv::CAP_PROP_FRAME_HEIGHT: " << cap.get(cv::CAP_PROP_FRAME_HEIGHT));
   ROS_DEBUG_STREAM("cv::CAP_PROP_FPS: " << cap.get(cv::CAP_PROP_FPS));
+  std::cout << "Camera: " << camera_file << std::endl;
+  std::cout << "cv::CAP_PROP_FRAME_WIDTH: " << cap.get(cv::CAP_PROP_FRAME_WIDTH) << std::endl;
+  std::cout << "cv::CAP_PROP_FRAME_HEIGHT: " << cap.get(cv::CAP_PROP_FRAME_HEIGHT) << std::endl;
+  std::cout << "cv::CAP_PROP_FPS: " << cap.get(cv::CAP_PROP_FPS) << std::endl;
 
   if (!cap.isOpened())
   {
@@ -86,19 +90,23 @@ int main(int argc, char** argv)
 
   ros::Time t;
   cv::Mat frm;
-
-  while (!finish_recording)
+  double total_duration = 30.0;
+  int frames_read = 0;
+  auto start = std::chrono::steady_clock::now();
+  std::chrono::duration<double> elapsed_seconds{std::chrono::steady_clock::now() - start};
+  while (elapsed_seconds.count() < total_duration)
   {
     if (cap.read(frm))
     {
-      cv::resize(frm, frm, cv::Size(720, 480), cv::INTER_LINEAR);
-
-      auto img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frm).toImageMsg();
-      img_msg->header.stamp = ros::Time::now();
-      pub_frm.publish(img_msg);
+        frames_read++;
     }
-    ros::spinOnce();
+    elapsed_seconds = std::chrono::steady_clock::now() - start;
+
   }
+  std::cout << "frames_read: " << frames_read << std::endl;
+  std::cout << "elapsed_seconds: " << elapsed_seconds.count() << std::endl;
+  std::cout << "avg frame rate: " << frames_read / elapsed_seconds.count() << " fps" << std::endl;
+  std::cout << "Finished." << std::endl;
 
   std::cout << "Finished." << std::endl;
   return 0;
