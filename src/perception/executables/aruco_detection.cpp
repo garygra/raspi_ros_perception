@@ -154,16 +154,17 @@ int main(int argc, char** argv)
             markers_msg.markers.back().t2 = r_t.second.at<double>(1,0);
             markers_msg.markers.back().t3 = r_t.second.at<double>(2,0);
           }
-          if (display_video)
-          {
-            cv::cvtColor(frm_black, frm, cv::COLOR_GRAY2RGB);
+          std::cout << markers_msg
+          //if (display_video)
+          //{
+            //cv::cvtColor(frm_black, frm, cv::COLOR_GRAY2RGB);
 
-            for (auto e : markers)
-            {
-              e.draw(frm);
-            }
-            cv::imshow("Video", frm);
-          }
+            //for (auto e : markers)
+            //{
+              //e.draw(frm);
+            //}
+            //cv::imshow("Video", frm);
+          //}
         }
         pub_marker.publish(markers_msg);
 
