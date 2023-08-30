@@ -12,7 +12,15 @@ find_package(catkin REQUIRED
   cv_bridge
   message_generation
   )
-find_package(OpenCV REQUIRED)
+  set(CV_MAJOR_VERSION=4.8.0)
+  set(OpenCV_DIR=/usr/local/lib/cmake/opencv4)
+  find_package(OpenCV 4.8.0 REQUIRED
+  COMPONENTS
+  core
+  imgproc
+  imgcodecs
+  CONFIG
+  )
 find_package(Torch REQUIRED)
 add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
 

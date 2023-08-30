@@ -17,7 +17,16 @@ find_package(catkin REQUIRED
   ros_type_introspection
   message_generation
   )
-find_package(OpenCV REQUIRED)
+set(CV_MAJOR_VERSION=4.8.0)
+set(OpenCV_DIR=/usr/local/lib/cmake/opencv4)
+find_package(OpenCV 4.8.0  COMPONENTS
+core
+imgproc
+imgcodecs
+CONFIG
+REQUIRED)
+
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

@@ -31,6 +31,9 @@ void finish_recording_callback(const std_msgs::Bool& msg)
 
 int main(int argc, char** argv)
 {
+  std::cout<< "opencv version: "<< CV_VERSION << std::endl;
+
+
   char hostname_[HOST_NAME_MAX];
   gethostname(hostname_, HOST_NAME_MAX);
   std::string hostname(hostname_);

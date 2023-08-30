@@ -1,5 +1,3 @@
-
-
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -42,6 +40,7 @@ void finish_recording_callback(const std_msgs::Bool& msg)
 
 int main(int argc, char** argv)
 {
+  std::cout<< "opencv version: "<< CV_VERSION << std::endl;
 
   int num_frames = 0;
 
@@ -59,7 +58,6 @@ int main(int argc, char** argv)
   auto fourcc = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
 
   bool display_video{ false };
-  bool use_open_cv{ false };
 
   int height{ 0 };
   int width{ 0 };
@@ -120,7 +118,7 @@ int main(int argc, char** argv)
     if (cap.read(frm))
     {
       num_frames++;
-      cv::resize(frm, resized_frm, cv::Size(720, 480), cv::INTER_LINEAR);
+      //cv::resize(frm, resized_frm, cv::Size(720, 480), cv::INTER_LINEAR);
       cv::cvtColor(frm, frm_black, cv::COLOR_RGB2GRAY);
       cv::threshold(frm_black, frm_black, 210, 250, cv::THRESH_BINARY);
       markers = aruconano::MarkerDetector::detect(frm_black);
@@ -135,7 +133,7 @@ int main(int argc, char** argv)
         {
           for (auto e : markers)
           {
-            if (e.id != 0) continue; // To only have the mushr's tag details
+            //if (e.id != 0) continue; // To only have the mushr's tag details
             auto r_t=e.estimatePose(camMatrix,distCoeff,markerSize);
             markers_msg.markers.emplace_back();
             markers_msg.markers.back().id = e.id;
@@ -162,15 +160,13 @@ int main(int argc, char** argv)
             {
               e.draw(frm);
             }
-            cv::imshow("Video", frm);
           }
         }
         pub_marker.publish(markers_msg);
-
-        auto img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frm).toImageMsg();
-        img_msg->header.stamp = ros::Time::now();
-        pub_frm.publish(img_msg);
       }
+      auto img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frm).toImageMsg();
+      img_msg->header.stamp = ros::Time::now();
+      pub_frm.publish(img_msg);
     }
     ros::spinOnce();
   }
