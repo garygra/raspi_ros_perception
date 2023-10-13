@@ -1,3 +1,4 @@
+import os
 import sys
 
 import rosbag
@@ -31,7 +32,9 @@ def stamped_markers_to_txt(msg, out):
         out_m = ""
         out = header_to_txt(msg.header, out) + sep
         for marker in msg.markers:
-            out_m += marker_to_txt(marker, out) + "\n"
+            if (out_m != ""):
+                out_m += "\n"
+            out_m += marker_to_txt(marker, out)
         return out_m
 
 def omnirobot_to_txt(msg, out):
@@ -63,16 +66,19 @@ def ackermann_drive_stamped_to_txt(msg, out):
         
 if __name__ == '__main__':
 
-
     parser = ArgumentParser()
     parser.add_argument("-b", "--bag", dest="bag",
                     help="Rosbag to read from", metavar="bag")
-    parser.add_argument("-o", "--out", dest="out_file", default=True,
+    parser.add_argument("-o", "--out", dest="out_filename", default="",
                     help="Out file")
 
     args = parser.parse_args()
     bag_name = args.bag;
-    out_filename = bag_name.replace("bag", "txt")
+    out_filename = args.out_filename
+    if(out_filename == ""):
+        path = os.path.dirname(os.path.abspath(os.path.abspath(bag_name)));
+        out_filename = path + "/" + os.path.basename(bag_name).replace("bag", "txt")
+
     print(args.bag)
     print(out_filename)
 
@@ -90,9 +96,7 @@ if __name__ == '__main__':
                 line = f(msg, out)
                 if line != None:
                     outfile.write( line + "\n" )
-                # print(f(msg))
-            # print(stamped_markers_to_txt(msg))
-            # print(msg._type, topic, t)
+
     finally:
         bag.close()
         outfile.close()

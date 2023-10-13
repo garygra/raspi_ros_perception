@@ -31,19 +31,17 @@ void finish_recording_callback(const std_msgs::Bool& msg)
 
 int main(int argc, char** argv)
 {
-  std::cout<< "opencv version: "<< CV_VERSION << std::endl;
-
+  std::cout << "opencv version: " << CV_VERSION << std::endl;
 
   char hostname_[HOST_NAME_MAX];
   gethostname(hostname_, HOST_NAME_MAX);
   std::string hostname(hostname_);
 
-  ros::init(argc, argv, hostname + "_aruco_detector");
+  ros::init(argc, argv, hostname + "_camera_publisher");
   ros::NodeHandle nh("~");
 
   ros::Subscriber sub_srr = nh.subscribe("/perception/stop", 1, finish_recording_callback);
-  ros::Publisher pub_frm =
-      nh.advertise<sensor_msgs::Image>(hostname + "/rgb_image", 40);
+  ros::Publisher pub_frm = nh.advertise<sensor_msgs::Image>(hostname + "/rgb_image", 40);
 
   auto fourcc = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
 
@@ -94,7 +92,7 @@ int main(int argc, char** argv)
   {
     if (cap.read(frm))
     {
-      cv::resize(frm, frm, cv::Size(720, 480), cv::INTER_LINEAR);
+      // cv::resize(frm, frm, cv::Size(720, 480), cv::INTER_LINEAR);
 
       auto img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frm).toImageMsg();
       img_msg->header.stamp = ros::Time::now();

@@ -1,0 +1,23 @@
+<launch>
+	<machine name="goose" address="192.168.0.107" env-loader="/home/pracsys-pi1/raspi_ros_perception/env.sh" user="robot" />
+	<arg name="control_topic" default="/car/mux/ackermann_cmd_mux/input/navigation" />
+	<arg name="init_pose_topic" default="/initialpose" />
+	<arg name="plan_file" default="$(find mushr_run_plan)/plans/straight_001.txt"/>
+	<arg name="record_ctrl" default="true" />
+	<arg name="record_camera" default="true" />
+	<arg name="separating_value" default="," />
+	
+	<node pkg="mushr_run_plan" type="plan_publisher.py" name="plan_publisher" output="screen">
+		<param name="control_topic" value="$(arg control_topic)" />
+		<param name="init_pose_topic" value="$(arg init_pose_topic)" />
+		<param name="plan_file" value="$(arg plan_file)" />
+		<param name="separating_value" value="$(arg separating_value)" />
+	</node>
+        <include file="$(find mushr_hardware)/launch/$(arg racecar_version)/sensors.launch" >
+
+	<node machine="goose" pkg="mushr_run_plan" type="base" name="rasPi2_aruco_detection" output="screen">
+        <rosparam command="load" file="$(find perception)/config/aruco_detection.yaml" />
+    </node>
+
+	<!-- <node pkg="rosbag" type="record" name="rosbag_record_standard_data" output="screen" args="-o $(find mushr_run_plan)/bags/ /car/vesc/odom" /> -->
+</launch>

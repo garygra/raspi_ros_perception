@@ -2,6 +2,4 @@
     <node pkg="perception" type="aruco_detection" name="camera_logitech" output="screen">
         <rosparam command="load" file="$(find perception)/config/logitech_brio.yaml" />
     </node>
-    <node pkg="rosbag" type="record" name="rosbag_record_video" output="screen" args="-o /home/pracsys/raspi_ros_perception/out/image_bags/video /camera_logitech/pracsys/rgb_image" />
-    <node pkg="rosbag" type="record" name="rosbag_record_markers" output="screen" args="-o /home/pracsys/raspi_ros_perception/out/marker_bags/marker /camera_logitech/pracsys/markers" />
 </launch>

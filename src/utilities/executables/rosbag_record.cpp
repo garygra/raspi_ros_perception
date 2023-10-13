@@ -11,10 +11,15 @@
 #include <std_msgs/String.h>
 
 #include <sensor_msgs/Image.h>
+#include <sensor_msgs/Imu.h>
+
 #include <geometry_msgs/TwistStamped.h>
-#include <cv_bridge/cv_bridge.h>
-#include <XmlRpcValue.h>
+
 #include <ackermann_msgs/AckermannDriveStamped.h>
+
+#include <cv_bridge/cv_bridge.h>
+
+#include <XmlRpcValue.h>
 
 #include "rosbag_record.hpp"
 
@@ -27,6 +32,8 @@ std::vector<utilities::queued_callback<std_msgs::Int32>> int32_queue;
 std::vector<utilities::queued_callback<perception::stamped_markers>> stamped_markers_queue;
 std::vector<utilities::queued_callback<geometry_msgs::TwistStamped>> twist_stamped_queue;
 std::vector<utilities::queued_callback<ackermann_msgs::AckermannDriveStamped>> ackermann_drive_stamped_queue;
+std::vector<utilities::queued_callback<sensor_msgs::Image>> image_queue;
+std::vector<utilities::queued_callback<sensor_msgs::Imu>> imu_queue;
 
 void finish_recording_callback(const std_msgs::Bool& msg)
 {
@@ -47,6 +54,38 @@ void init_bag(rosbag::Bag* bag)
   bag->open(bag_name.str(), rosbag::bagmode::Write);
   std::cout << "Bag name: " << bag_name.str() << std::endl;
 }
+
+template <typename MsgType, typename Queue>
+bool register_topic(Queue& queue, const std::string& topic_name, const std::string topic_type,
+                    const std::string expected_type, std::vector<ros::Subscriber>& subscribers, ros::NodeHandle& nh)
+{
+  bool status{ false };
+  if (topic_type == expected_type)  // Must be a nicer way of checking MsgType/topic_type == expected
+  {
+    queue.emplace_back(topic_name);
+    subscribers.push_back(nh.subscribe(topic_name, 100, &utilities::queued_callback<MsgType>::callback, &queue.back()));
+    status = true;
+  }
+  return status;
+}
+
+template <typename Queue>
+bool process_queue(rosbag::Bag& bag, Queue& queue)
+{
+  bool there_are_msgs = false;
+  for (std::size_t idx = 0; idx < queue.size(); ++idx)
+  {
+    if (!queue[idx]._queue.empty())
+    {
+      there_are_msgs = true;
+      auto msg = queue[idx]._queue.front();
+      bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
+      queue[idx]._queue.pop();
+    }
+  }
+  return there_are_msgs;
+}
+
 void bag_writter()
 {
   rosbag::Bag bag;
@@ -57,37 +96,63 @@ void bag_writter()
   bool there_are_msgs = true;
   while (there_are_msgs || !finish_recording)
   {
-    there_are_msgs = false;
-    if (!stamped_markers_queue[0]._queue.empty())
-    {
-      there_are_msgs = true;
-      // stamped_markers_queue[0]._queue_mutex.lock();
-      auto msg = stamped_markers_queue[0]._queue.front();
-      bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
-      stamped_markers_queue[0]._queue.pop();
-      // stamped_markers_queue[0]._queue_mutex.unlock();
-    }
-    if (!string_queue[0]._queue.empty())
-    {
-      there_are_msgs = true;
-      auto msg = string_queue[0]._queue.front();
-      bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
-      string_queue[0]._queue.pop();
-    }
-    if (!twist_stamped_queue[0]._queue.empty())
-    {
-      there_are_msgs = true;
-      auto msg = twist_stamped_queue[0]._queue.front();
-      bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
-      twist_stamped_queue[0]._queue.pop();
-    }
-    if (!ackermann_drive_stamped_queue[0]._queue.empty())
-    {
-      there_are_msgs = true;
-      auto msg = ackermann_drive_stamped_queue[0]._queue.front();
-      bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
-      ackermann_drive_stamped_queue[0]._queue.pop();
-    }
+    there_are_msgs |= process_queue(bag, stamped_markers_queue);
+    there_are_msgs |= process_queue(bag, string_queue);
+    there_are_msgs |= process_queue(bag, twist_stamped_queue);
+    there_are_msgs |= process_queue(bag, ackermann_drive_stamped_queue);
+    there_are_msgs |= process_queue(bag, image_queue);
+    there_are_msgs |= process_queue(bag, imu_queue);
+
+    // for (std::size_t idx = 0; idx < stamped_markers_queue.size(); ++idx)
+    // {
+    //   if (!stamped_markers_queue[idx]._queue.empty())
+    //   {
+    //     there_are_msgs = true;
+    //     auto msg = stamped_markers_queue[idx]._queue.front();
+    //     bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
+    //     stamped_markers_queue[idx]._queue.pop();
+    //   }
+    // }
+    // for (std::size_t idx = 0; idx < string_queue.size(); ++idx)
+    // {
+    //   if (!string_queue[idx]._queue.empty())
+    //   {
+    //     there_are_msgs = true;
+    //     auto msg = string_queue[idx]._queue.front();
+    //     bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
+    //     string_queue[idx]._queue.pop();
+    //   }
+    // }
+    // for (std::size_t idx = 0; idx < twist_stamped_queue.size(); ++idx)
+    // {
+    //   if (!twist_stamped_queue[idx]._queue.empty())
+    //   {
+    //     there_are_msgs = true;
+    //     auto msg = twist_stamped_queue[idx]._queue.front();
+    //     bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
+    //     twist_stamped_queue[idx]._queue.pop();
+    //   }
+    // }
+    // for (std::size_t idx = 0; idx < ackermann_drive_stamped_queue.size(); ++idx)
+    // {
+    //   if (!ackermann_drive_stamped_queue[idx]._queue.empty())
+    //   {
+    //     there_are_msgs = true;
+    //     auto msg = ackermann_drive_stamped_queue[idx]._queue.front();
+    //     bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
+    //     ackermann_drive_stamped_queue[idx]._queue.pop();
+    //   }
+    // }
+    // for (std::size_t idx = 0; idx < image_queue.size(); ++idx)
+    // {
+    //   if (!image_queue[idx]._queue.empty())
+    //   {
+    //     there_are_msgs = true;
+    //     auto msg = image_queue[idx]._queue.front();
+    //     bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
+    //     image_queue[idx]._queue.pop();
+    //   }
+    // }
   }
   bag.close();
 }
@@ -108,54 +173,77 @@ int main(int argc, char** argv)
 
   ros::Subscriber sub_srr = nh.subscribe(stop_topic, 1, finish_recording_callback);
 
-  // std::shared_ptr<rosbag::Bag> bag = std::make_shared<rosbag::Bag>();
-  // init_bag(bag.get());
-
   for (XmlRpc::XmlRpcValue::ValueStruct::const_iterator it = topics.begin(); it != topics.end(); ++it)
   {
     auto topic_i = topics[it->first];
-    std::string topic_name(topic_i["name"]);
-    std::string topic_type(topic_i["type"]);
+    const std::string topic_name(topic_i["name"]);
+    const std::string topic_type(topic_i["type"]);
 
     std::cout << "topic_name: " << topic_name << std::endl;
     ROS_INFO_STREAM("Topic: " << topic_name << " - " << topic_type);
-    if (topic_type == "string")  
-    {  // TODO: pass this to a class?
-      string_queue.emplace_back(topic_name);
-      subscribers.push_back(
-          nh.subscribe(topic_name, 100, &utilities::queued_callback<std_msgs::String>::callback, &string_queue.back()));
-    }
-    else if (topic_type == "int32")
-    {  // TODO: pass this to a class?
-      int32_queue.emplace_back(topic_name);
-      subscribers.push_back(
-          nh.subscribe(topic_name, 100, &utilities::queued_callback<std_msgs::Int32>::callback, &int32_queue.back()));
-    }
-    else if (topic_type == "stamped_markers")
-    {  // TODO: pass this to a class?
-      stamped_markers_queue.emplace_back(topic_name);
-      subscribers.push_back(nh.subscribe(topic_name, 100,
-                                         &utilities::queued_callback<perception::stamped_markers>::callback,
-                                         &stamped_markers_queue.back()));
-    }
-    else if (topic_type == "TwistStamped")
-    {  // TODO: pass this to a class?
-      twist_stamped_queue.emplace_back(topic_name);
-      subscribers.push_back(nh.subscribe(topic_name, 100,
-                                         &utilities::queued_callback<geometry_msgs::TwistStamped>::callback,
-                                         &twist_stamped_queue.back()));
-    }
-    else if (topic_type == "AckermannDriveStamped")
-    {  // TODO: pass this to a class?
-      ackermann_drive_stamped_queue.emplace_back(topic_name);
-      subscribers.push_back(nh.subscribe(topic_name, 100,
-                                         &utilities::queued_callback<ackermann_msgs::AckermannDriveStamped>::callback,
-                                         &ackermann_drive_stamped_queue.back()));
-    }
-    else
+    bool registred{ false };
+    registred |= register_topic<std_msgs::String>(string_queue, topic_name, topic_type, "string", subscribers, nh);
+    registred |= register_topic<std_msgs::Int32>(int32_queue, topic_name, topic_type, "int32", subscribers, nh);
+    registred |= register_topic<perception::stamped_markers>(stamped_markers_queue, topic_name, topic_type,
+                                                             "stamped_markers", subscribers, nh);
+    registred |= register_topic<geometry_msgs::TwistStamped>(twist_stamped_queue, topic_name, topic_type,
+                                                             "TwistStamped", subscribers, nh);
+    registred |= register_topic<ackermann_msgs::AckermannDriveStamped>(
+        ackermann_drive_stamped_queue, topic_name, topic_type, "AckermannDriveStamped", subscribers, nh);
+    registred |=
+        register_topic<sensor_msgs::Image>(image_queue, topic_name, topic_type, "sensor_msgs::Image", subscribers, nh);
+    registred |=
+        register_topic<sensor_msgs::Imu>(imu_queue, topic_name, topic_type, "sensor_msgs::Imu", subscribers, nh);
+
+    if (!registred)
     {
-      std::cout << "Unsupported topic type!" << std::endl;
+      std::cout << "Unsupported topic '" << topic_name << "' type: " << topic_type << std::endl;
     }
+    // if (topic_type == "string")
+    // {  // TODO: pass this to a class?
+    //   string_queue.emplace_back(topic_name);
+    //   subscribers.push_back(
+    //       nh.subscribe(topic_name, 100, &utilities::queued_callback<std_msgs::String>::callback,
+    //       &string_queue.back()));
+    // }
+    // else if (topic_type == "int32")
+    // {  // TODO: pass this to a class?
+    //   int32_queue.emplace_back(topic_name);
+    //   subscribers.push_back(
+    //       nh.subscribe(topic_name, 100, &utilities::queued_callback<std_msgs::Int32>::callback,
+    //       &int32_queue.back()));
+    // }
+    // else if (topic_type == "stamped_markers")
+    // {  // TODO: pass this to a class?
+    //   stamped_markers_queue.emplace_back(topic_name);
+    //   subscribers.push_back(nh.subscribe(topic_name, 100,
+    //                                      &utilities::queued_callback<perception::stamped_markers>::callback,
+    //                                      &stamped_markers_queue.back()));
+    // }
+    // else if (topic_type == "TwistStamped")
+    // {  // TODO: pass this to a class?
+    //   twist_stamped_queue.emplace_back(topic_name);
+    //   subscribers.push_back(nh.subscribe(topic_name, 100,
+    //                                      &utilities::queued_callback<geometry_msgs::TwistStamped>::callback,
+    //                                      &twist_stamped_queue.back()));
+    // }
+    // else if (topic_type == "AckermannDriveStamped")
+    // {  // TODO: pass this to a class?
+    //   ackermann_drive_stamped_queue.emplace_back(topic_name);
+    //   subscribers.push_back(nh.subscribe(topic_name, 100,
+    //                                      &utilities::queued_callback<ackermann_msgs::AckermannDriveStamped>::callback,
+    //                                      &ackermann_drive_stamped_queue.back()));
+    // }
+    // else if (topic_type == "sensor_msgs::Image")
+    // {
+    //   // "/camera_logitech/pracsys/rgb_image"
+    //   subscribers.push_back(nh.subscribe(topic_name, 100, &utilities::queued_callback<sensor_msgs::Image>::callback,
+    //                                      &image_queue.back()));
+    // }
+    // else
+    // {
+    //   std::cout << "Unsupported topic type: " << topic_type << std::endl;
+    // }
   }
 
   ros::Rate loop_rate(50);

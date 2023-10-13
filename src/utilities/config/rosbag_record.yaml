@@ -24,6 +24,18 @@ topics:
   topic_8:
     name: "/omnirobot/motor_ctrl"
     type: "omnirobot"
+  topic_9:
+    name: "/camera_logitech/pracsys/image/rgb"
+    type: "sensor_msgs::Image"
+  topic_10:
+    name: "/camera_logitech/pracsys/image/markers"
+    type: "sensor_msgs::Image"
+  topic_11:
+    name: "/car/camera/accel/sample"
+    type: "sensor_msgs::Imu"
+  topic_12:
+    name: "/car/camera/gyro/sample"
+    type: "sensor_msgs::Imu"
 
 
 stop_topic: "/perception/stop"
