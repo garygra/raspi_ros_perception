@@ -1,5 +1,6 @@
 <launch>
     <node pkg="perception" type="aruco_detection" name="camera_logitech" output="screen">
         <rosparam command="load" file="$(find perception)/config/logitech_brio.yaml" />
+        <param name="stop_service" value="/general/stop" />
     </node>
 </launch>

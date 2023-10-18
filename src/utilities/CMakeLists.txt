@@ -13,10 +13,10 @@ find_package(catkin REQUIRED
   rosbag_storage
   topic_tools
   genmsg
-  perception
   ros_type_introspection
   message_generation
   )
+
 set(CV_MAJOR_VERSION=4.8.0)
 set(OpenCV_DIR=/usr/local/lib/cmake/opencv4)
 find_package(OpenCV 4.8.0  COMPONENTS
@@ -62,17 +62,27 @@ REQUIRED)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
+file(GLOB MSG_FULL_FILENAMES ${PROJECT_SOURCE_DIR}/msg/*.msg)
+set(MSG_FILES "")
+foreach(f ${MSG_FULL_FILENAMES})
+    GET_FILENAME_COMPONENT(fname ${f} NAME_WE )
+    list(APPEND MSG_FILES "${fname}.msg")
+endforeach()
+
 add_message_files(
   FILES
-  omnirobot.msg
+  ${MSG_FILES}
+  # omnirobot.msg
+  # marker.msg
+  # stamped_markers.msg
 )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  stop_execution.srv
+  # Service2.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -117,9 +127,9 @@ add_message_files(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+ INCLUDE_DIRS include
 #  LIBRARIES perception
-    CATKIN_DEPENDS perception message_runtime
+    CATKIN_DEPENDS message_runtime
 #  DEPENDS system_lib
 )
 

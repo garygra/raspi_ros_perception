@@ -22,20 +22,15 @@
 
 #include "aruco/aruco_nano.h"
 
-#include "perception/marker.h"
-#include "perception/stamped_markers.h"
+#include "utilities/marker.h"
+#include "utilities/stamped_markers.h"
+#include "utilities/stop_execution.hpp"
+#include "utilities/utils.hpp"
 
-#include "utils.hpp"
+// #include "utils.hpp"
 
 cv::Mat camMatrix = (cv::Mat_<double>(3, 3) << 564.919678, 0., 315.803680, 0., 567.342651, 235.674759, 0., 0., 1.);
 cv::Mat distCoeff = (cv::Mat_<double>(1, 5) << .291190565, -1.24848104, -.00684430776, -.00542148249, 1.41334522);
-
-bool finish_recording = false;
-
-void finish_recording_callback(const std_msgs::Bool& msg)
-{
-  finish_recording = msg.data;
-}
 
 int main(int argc, char** argv)
 {
@@ -45,32 +40,34 @@ int main(int argc, char** argv)
 
   char hostname_[HOST_NAME_MAX];
   gethostname(hostname_, HOST_NAME_MAX);
-  std::string hostname(hostname_);
-
-  ros::init(argc, argv, hostname + "_aruco_detector");
-  ros::NodeHandle nh("~");
-
-  ros::Subscriber sub_srr = nh.subscribe("/perception/stop", 1, finish_recording_callback);
-  ros::Publisher pub_marker = nh.advertise<perception::stamped_markers>(hostname + "/markers", 40);
-  ros::Publisher pub_frm_rgb = nh.advertise<sensor_msgs::Image>(hostname + "/image/rgb", 40);
-  ros::Publisher pub_frm_markers = nh.advertise<sensor_msgs::Image>(hostname + "/image/markers", 40);
-
-  auto fourcc = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
-
-  bool display_video{ false };
+  const std::string hostname(hostname_);
+  const std::string node_name(hostname + "_aruco_detector");
 
   int height{ 0 };
   int width{ 0 };
   int frequency{ 0 };
   std::string camera_file{ "" };
+  std::string stop_service{ "" };
+  bool display_video{ false };
 
-  perception::get_param_and_check(nh, GET_VARIABLE_NAME(camera_file), camera_file);
+  ros::init(argc, argv, node_name);
+  ros::NodeHandle nh("~");
 
-  perception::get_param_and_check(nh, GET_VARIABLE_NAME(height), height);
-  perception::get_param_and_check(nh, GET_VARIABLE_NAME(width), width);
-  perception::get_param_and_check(nh, GET_VARIABLE_NAME(frequency), frequency);
+  utilities::get_param_and_check(nh, GET_VARIABLE_NAME(stop_service), stop_service);
+  utilities::get_param_and_check(nh, GET_VARIABLE_NAME(camera_file), camera_file);
+  utilities::get_param_and_check(nh, GET_VARIABLE_NAME(height), height);
+  utilities::get_param_and_check(nh, GET_VARIABLE_NAME(width), width);
+  utilities::get_param_and_check(nh, GET_VARIABLE_NAME(frequency), frequency);
+  utilities::get_param_and_check(nh, GET_VARIABLE_NAME(display_video), display_video);
 
-  perception::get_param_and_check(nh, GET_VARIABLE_NAME(display_video), display_video);
+  utilities::stop_execution_t stop_execution(node_name);
+  ros::ServiceServer service =
+      nh.advertiseService(stop_service, &utilities::stop_execution_t::callback, &stop_execution);
+  ros::Publisher pub_marker = nh.advertise<utilities::stamped_markers>(hostname + "/markers", 40);
+  ros::Publisher pub_frm_rgb = nh.advertise<sensor_msgs::Image>(hostname + "/image/rgb", 40);
+  ros::Publisher pub_frm_markers = nh.advertise<sensor_msgs::Image>(hostname + "/image/markers", 40);
+
+  auto fourcc = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
 
   cv::VideoCapture cap(camera_file, cv::CAP_V4L2);
 
@@ -107,14 +104,14 @@ int main(int argc, char** argv)
 
   ros::Time t1 = ros::Time::now();
 
-  perception::stamped_markers markers_msg;
+  utilities::stamped_markers markers_msg;
 
   markers_msg.header.seq = 0;
   markers_msg.header.frame_id = hostname;
   float markerSize = 0.147;  // 16.5cm and 20.5 with the white border
 
   ROS_INFO_STREAM("Display video: " << (display_video ? "True" : "False"));
-  while (!finish_recording)
+  while (stop_execution.continue_running())
   {
     if (cap.read(frm))
     {

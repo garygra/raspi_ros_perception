@@ -3,7 +3,6 @@
 #include <thread>
 
 #include <ros/ros.h>
-
 #include <rosbag/bag.h>
 
 #include <std_msgs/Bool.h>
@@ -21,140 +20,64 @@
 
 #include <XmlRpcValue.h>
 
-#include "rosbag_record.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/rosbag_record.hpp"
+#include "utilities/stop_execution.hpp"
 
-std::atomic<bool> finish_recording = false;
-
+std::atomic<bool> stop = false;
 std::string rosbag_directory = "";
 
-std::vector<utilities::queued_callback<std_msgs::String>> string_queue;
-std::vector<utilities::queued_callback<std_msgs::Int32>> int32_queue;
-std::vector<utilities::queued_callback<perception::stamped_markers>> stamped_markers_queue;
-std::vector<utilities::queued_callback<geometry_msgs::TwistStamped>> twist_stamped_queue;
-std::vector<utilities::queued_callback<ackermann_msgs::AckermannDriveStamped>> ackermann_drive_stamped_queue;
-std::vector<utilities::queued_callback<sensor_msgs::Image>> image_queue;
-std::vector<utilities::queued_callback<sensor_msgs::Imu>> imu_queue;
-
-void finish_recording_callback(const std_msgs::Bool& msg)
-{
-  if (msg.data)
-  {
-    ROS_INFO_STREAM("Exit command received!");
-  }
-
-  finish_recording = msg.data;
-}
-
-void init_bag(rosbag::Bag* bag)
-{
-  std::ostringstream bag_name;
-  auto t = std::time(nullptr);
-  std::tm tm = *std::localtime(&t);
-  bag_name << rosbag_directory << "/bag_" << std::put_time(&tm, "%y%m%d_%H%M") << ".bag";
-  bag->open(bag_name.str(), rosbag::bagmode::Write);
-  std::cout << "Bag name: " << bag_name.str() << std::endl;
-}
-
-template <typename MsgType, typename Queue>
-bool register_topic(Queue& queue, const std::string& topic_name, const std::string topic_type,
-                    const std::string expected_type, std::vector<ros::Subscriber>& subscribers, ros::NodeHandle& nh)
-{
-  bool status{ false };
-  if (topic_type == expected_type)  // Must be a nicer way of checking MsgType/topic_type == expected
-  {
-    queue.emplace_back(topic_name);
-    subscribers.push_back(nh.subscribe(topic_name, 100, &utilities::queued_callback<MsgType>::callback, &queue.back()));
-    status = true;
-  }
-  return status;
-}
+utilities::queues_t<std_msgs::String> string_queue;
+utilities::queues_t<std_msgs::Int32> int32_queue;
+utilities::queues_t<utilities::stamped_markers> stamped_markers_queue;
+utilities::queues_t<geometry_msgs::TwistStamped> twist_stamped_queue;
+utilities::queues_t<ackermann_msgs::AckermannDriveStamped> ackermann_drive_stamped_queue;
+utilities::queues_t<sensor_msgs::Image> image_queue;
+utilities::queues_t<sensor_msgs::Imu> imu_queue;
 
 template <typename Queue>
-bool process_queue(rosbag::Bag& bag, Queue& queue)
+std::size_t process_queue(rosbag::Bag& bag, const Queue& queue)
 {
-  bool there_are_msgs = false;
+  std::size_t msgs_left{ 0 };
   for (std::size_t idx = 0; idx < queue.size(); ++idx)
   {
     if (!queue[idx]._queue.empty())
     {
-      there_are_msgs = true;
+      msgs_left += queue[idx]._queue.size();
       auto msg = queue[idx]._queue.front();
       bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
       queue[idx]._queue.pop();
     }
   }
-  return there_are_msgs;
+  return msgs_left;
+}
+
+template <typename... Queues>
+std::size_t process_all_queues(rosbag::Bag& bag, const Queues&... queues)
+{
+  return (process_queue(bag, queues) + ...);
 }
 
 void bag_writter()
 {
   rosbag::Bag bag;
-  init_bag(&bag);
+  utilities::init_bag(&bag, rosbag_directory);
 
   ros::Time msg_t;
 
-  bool there_are_msgs = true;
-  while (there_are_msgs || !finish_recording)
-  {
-    there_are_msgs |= process_queue(bag, stamped_markers_queue);
-    there_are_msgs |= process_queue(bag, string_queue);
-    there_are_msgs |= process_queue(bag, twist_stamped_queue);
-    there_are_msgs |= process_queue(bag, ackermann_drive_stamped_queue);
-    there_are_msgs |= process_queue(bag, image_queue);
-    there_are_msgs |= process_queue(bag, imu_queue);
+  std::size_t msgs_left{ 0 };
 
-    // for (std::size_t idx = 0; idx < stamped_markers_queue.size(); ++idx)
-    // {
-    //   if (!stamped_markers_queue[idx]._queue.empty())
-    //   {
-    //     there_are_msgs = true;
-    //     auto msg = stamped_markers_queue[idx]._queue.front();
-    //     bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
-    //     stamped_markers_queue[idx]._queue.pop();
-    //   }
-    // }
-    // for (std::size_t idx = 0; idx < string_queue.size(); ++idx)
-    // {
-    //   if (!string_queue[idx]._queue.empty())
-    //   {
-    //     there_are_msgs = true;
-    //     auto msg = string_queue[idx]._queue.front();
-    //     bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
-    //     string_queue[idx]._queue.pop();
-    //   }
-    // }
-    // for (std::size_t idx = 0; idx < twist_stamped_queue.size(); ++idx)
-    // {
-    //   if (!twist_stamped_queue[idx]._queue.empty())
-    //   {
-    //     there_are_msgs = true;
-    //     auto msg = twist_stamped_queue[idx]._queue.front();
-    //     bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
-    //     twist_stamped_queue[idx]._queue.pop();
-    //   }
-    // }
-    // for (std::size_t idx = 0; idx < ackermann_drive_stamped_queue.size(); ++idx)
-    // {
-    //   if (!ackermann_drive_stamped_queue[idx]._queue.empty())
-    //   {
-    //     there_are_msgs = true;
-    //     auto msg = ackermann_drive_stamped_queue[idx]._queue.front();
-    //     bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
-    //     ackermann_drive_stamped_queue[idx]._queue.pop();
-    //   }
-    // }
-    // for (std::size_t idx = 0; idx < image_queue.size(); ++idx)
-    // {
-    //   if (!image_queue[idx]._queue.empty())
-    //   {
-    //     there_are_msgs = true;
-    //     auto msg = image_queue[idx]._queue.front();
-    //     bag.write(std::get<0>(msg), std::get<1>(msg), std::get<2>(msg));
-    //     image_queue[idx]._queue.pop();
-    //   }
-    // }
+  while (msgs_left > 0 || !stop)
+  {
+    msgs_left = process_all_queues(bag, stamped_markers_queue, string_queue, twist_stamped_queue,
+                                   ackermann_drive_stamped_queue, image_queue, imu_queue);
+    if (stop)
+    {
+      ROS_INFO_STREAM_ONCE("Remaining messages: " << msgs_left);
+    }
   }
   bag.close();
+  ROS_INFO_STREAM("Rosbag closed.");
 }
 int main(int argc, char** argv)
 {
@@ -164,14 +87,16 @@ int main(int argc, char** argv)
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   XmlRpc::XmlRpcValue topics;
-  XmlRpc::XmlRpcValue stop_topic;
+  XmlRpc::XmlRpcValue stop_service;
   utilities::get_param_and_check(nh, GET_VARIABLE_NAME(topics), topics);
-  utilities::get_param_and_check(nh, GET_VARIABLE_NAME(stop_topic), stop_topic);
+  utilities::get_param_and_check(nh, GET_VARIABLE_NAME(stop_service), stop_service);
   utilities::get_param_and_check(nh, GET_VARIABLE_NAME(rosbag_directory), rosbag_directory);
 
   std::vector<ros::Subscriber> subscribers;
+  utilities::stop_execution_t stop_execution("ROSBAG_RECORD");
 
-  ros::Subscriber sub_srr = nh.subscribe(stop_topic, 1, finish_recording_callback);
+  ros::ServiceServer service =
+      nh.advertiseService(stop_service, &utilities::stop_execution_t::callback, &stop_execution);
 
   for (XmlRpc::XmlRpcValue::ValueStruct::const_iterator it = topics.begin(); it != topics.end(); ++it)
   {
@@ -182,82 +107,30 @@ int main(int argc, char** argv)
     std::cout << "topic_name: " << topic_name << std::endl;
     ROS_INFO_STREAM("Topic: " << topic_name << " - " << topic_type);
     bool registred{ false };
-    registred |= register_topic<std_msgs::String>(string_queue, topic_name, topic_type, "string", subscribers, nh);
-    registred |= register_topic<std_msgs::Int32>(int32_queue, topic_name, topic_type, "int32", subscribers, nh);
-    registred |= register_topic<perception::stamped_markers>(stamped_markers_queue, topic_name, topic_type,
-                                                             "stamped_markers", subscribers, nh);
-    registred |= register_topic<geometry_msgs::TwistStamped>(twist_stamped_queue, topic_name, topic_type,
-                                                             "TwistStamped", subscribers, nh);
-    registred |= register_topic<ackermann_msgs::AckermannDriveStamped>(
-        ackermann_drive_stamped_queue, topic_name, topic_type, "AckermannDriveStamped", subscribers, nh);
+    registred |= string_queue.register_topic(topic_name, topic_type, "string", subscribers, nh);
+    registred |= int32_queue.register_topic(topic_name, topic_type, "int32", subscribers, nh);
+    registred |= stamped_markers_queue.register_topic(topic_name, topic_type, "stamped_markers", subscribers, nh);
+    registred |= twist_stamped_queue.register_topic(topic_name, topic_type, "TwistStamped", subscribers, nh);
     registred |=
-        register_topic<sensor_msgs::Image>(image_queue, topic_name, topic_type, "sensor_msgs::Image", subscribers, nh);
-    registred |=
-        register_topic<sensor_msgs::Imu>(imu_queue, topic_name, topic_type, "sensor_msgs::Imu", subscribers, nh);
+        ackermann_drive_stamped_queue.register_topic(topic_name, topic_type, "AckermannDriveStamped", subscribers, nh);
+    registred |= image_queue.register_topic(topic_name, topic_type, "sensor_msgs::Image", subscribers, nh);
+    registred |= imu_queue.register_topic(topic_name, topic_type, "sensor_msgs::Imu", subscribers, nh);
 
     if (!registred)
     {
       std::cout << "Unsupported topic '" << topic_name << "' type: " << topic_type << std::endl;
     }
-    // if (topic_type == "string")
-    // {  // TODO: pass this to a class?
-    //   string_queue.emplace_back(topic_name);
-    //   subscribers.push_back(
-    //       nh.subscribe(topic_name, 100, &utilities::queued_callback<std_msgs::String>::callback,
-    //       &string_queue.back()));
-    // }
-    // else if (topic_type == "int32")
-    // {  // TODO: pass this to a class?
-    //   int32_queue.emplace_back(topic_name);
-    //   subscribers.push_back(
-    //       nh.subscribe(topic_name, 100, &utilities::queued_callback<std_msgs::Int32>::callback,
-    //       &int32_queue.back()));
-    // }
-    // else if (topic_type == "stamped_markers")
-    // {  // TODO: pass this to a class?
-    //   stamped_markers_queue.emplace_back(topic_name);
-    //   subscribers.push_back(nh.subscribe(topic_name, 100,
-    //                                      &utilities::queued_callback<perception::stamped_markers>::callback,
-    //                                      &stamped_markers_queue.back()));
-    // }
-    // else if (topic_type == "TwistStamped")
-    // {  // TODO: pass this to a class?
-    //   twist_stamped_queue.emplace_back(topic_name);
-    //   subscribers.push_back(nh.subscribe(topic_name, 100,
-    //                                      &utilities::queued_callback<geometry_msgs::TwistStamped>::callback,
-    //                                      &twist_stamped_queue.back()));
-    // }
-    // else if (topic_type == "AckermannDriveStamped")
-    // {  // TODO: pass this to a class?
-    //   ackermann_drive_stamped_queue.emplace_back(topic_name);
-    //   subscribers.push_back(nh.subscribe(topic_name, 100,
-    //                                      &utilities::queued_callback<ackermann_msgs::AckermannDriveStamped>::callback,
-    //                                      &ackermann_drive_stamped_queue.back()));
-    // }
-    // else if (topic_type == "sensor_msgs::Image")
-    // {
-    //   // "/camera_logitech/pracsys/rgb_image"
-    //   subscribers.push_back(nh.subscribe(topic_name, 100, &utilities::queued_callback<sensor_msgs::Image>::callback,
-    //                                      &image_queue.back()));
-    // }
-    // else
-    // {
-    //   std::cout << "Unsupported topic type: " << topic_type << std::endl;
-    // }
   }
 
-  ros::Rate loop_rate(50);
-
-  // std::cout << "Spining..." << std::endl;
   std::thread thread_b(bag_writter);
-  while (true)
+
+  while (!stop)
   {
+    stop = stop_execution.status() != utilities::stop_execution_t::Status::running;
     ros::spinOnce();
-    if (finish_recording)
-    {
-      thread_b.join();
-      break;
-    }
   }
+  ROS_INFO_STREAM("Joining bag writter thread");
+  thread_b.join();
+
   return 0;
 }

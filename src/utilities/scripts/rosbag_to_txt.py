@@ -5,8 +5,8 @@ import rosbag
 from std_msgs.msg import Int32, String
 from ackermann_msgs.msg import AckermannDriveStamped
 from utilities.msg import omnirobot
+from utilities.msg import stamped_markers
 
-from perception.msg import stamped_markers
 from argparse import ArgumentParser
 
 sep = " "
@@ -18,7 +18,7 @@ def header_to_txt(msg, out):
 
 def marker_to_txt(msg, out):
     global sep
-    if msg._type == "perception/marker":    
+    if msg._type == "utilities/marker":    
         out += str(msg.id) + sep 
         out += str(msg.x1) + sep + str(msg.y1) + sep 
         out += str(msg.x2) + sep + str(msg.y2) + sep 
@@ -28,7 +28,7 @@ def marker_to_txt(msg, out):
 
 def stamped_markers_to_txt(msg, out):
     global sep
-    if msg._type == "perception/stamped_markers":
+    if msg._type == "utilities/stamped_markers":
         out_m = ""
         out = header_to_txt(msg.header, out) + sep
         for marker in msg.markers:

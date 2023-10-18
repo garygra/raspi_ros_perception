@@ -9,7 +9,7 @@ void get_param_and_check(ros::NodeHandle& nh, const std::string& var_name, T& va
 {
   if (!nh.getParam(var_name, var))
   {
-    std::cout << var_name << " parameter is needed." << std::endl;
+    ROS_FATAL_STREAM(var_name << " parameter is needed.");
     exit(-1);
   }
 }

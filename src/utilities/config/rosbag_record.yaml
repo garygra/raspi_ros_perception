@@ -38,5 +38,5 @@ topics:
     type: "sensor_msgs::Imu"
 
 
-stop_topic: "/perception/stop"
+stop_service: "/general/stop"
 rosbag_directory: "/home/pracsys/raspi_ros_perception/out/"

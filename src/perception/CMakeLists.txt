@@ -11,10 +11,11 @@ find_package(catkin REQUIRED
   geometry_msgs
   cv_bridge
   message_generation
+  utilities
   )
-  set(CV_MAJOR_VERSION=4.8.0)
-  set(OpenCV_DIR=/usr/local/lib/cmake/opencv4)
-  find_package(OpenCV 4.8.0 REQUIRED
+set(CV_MAJOR_VERSION=4.8.0)
+set(OpenCV_DIR=/usr/local/lib/cmake/opencv4)
+find_package(OpenCV 4.8.0 REQUIRED
   COMPONENTS
   core
   imgproc
@@ -58,11 +59,11 @@ add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  marker.msg
-  stamped_markers.msg
-)
+# add_message_files(
+#   FILES
+#   marker.msg
+#   stamped_markers.msg
+# )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -79,10 +80,10 @@ add_message_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   std_msgs  # Or other packages containing msgs
- )
+ # generate_messages(
+ #   DEPENDENCIES
+ #   std_msgs  # Or other packages containing msgs
+ # )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -116,7 +117,7 @@ add_message_files(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES perception
-    CATKIN_DEPENDS message_runtime roscpp roslib
+    CATKIN_DEPENDS utilities message_runtime roscpp roslib
 #  DEPENDS system_lib
 )
 
@@ -147,18 +148,18 @@ file(GLOB EXECUTABLE_FILES ${PROJECT_SOURCE_DIR}/executables/*.cpp)
     # ${PROJECT_SOURCE_DIR}/src/prx/experiments/*.cpp)
 
 foreach(f ${EXECUTABLE_FILES})
-    MESSAGE("file: ${f}")
-    GET_FILENAME_COMPONENT(fname ${f} NAME_WE )
-    add_executable(${fname} ${f})
-    add_dependencies(${fname}
+  MESSAGE("file: ${f}")
+  GET_FILENAME_COMPONENT(fname ${f} NAME_WE )
+  add_executable(${fname} ${f})
+  add_dependencies(${fname}
                      ${${PROJECT_NAME}_EXPORTED_TARGETS} 
                      ${catkin_EXPORTED_TARGETS}
-                     geometry_msgs)
-    target_link_libraries(${fname}
-                          ${catkin_LIBRARIES}
-                          ${OpenCV_LIBS}
-                          ${TORCH_LIBRARIES}
-                        )
+                     )
+  target_link_libraries(${fname}
+                        ${catkin_LIBRARIES}
+                        ${OpenCV_LIBS}
+                        ${TORCH_LIBRARIES}
+                      )
 endforeach()
 # add_executable(video_gatherer_cpp src/vid_gather_cpp.cpp)
 # add_executable(display_video_cpp src/display_video.cpp)
